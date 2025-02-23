@@ -1,7 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import api from '../api/api';
 import AttemptsTable from './AttemptsTable';
-import {Attempt} from "../types/attempt";
+import { Attempt } from "../types/attempt";
 
 const PhishingSimulation: React.FC = () => {
     const [email, setEmail] = useState<string>('');
@@ -9,8 +9,15 @@ const PhishingSimulation: React.FC = () => {
     const [description, setDescription] = useState<string>('');
     const [attempts, setAttempts] = useState<Attempt[]>([]);
 
+    // New state to track whether we are currently sending a request
+    const [isSending, setIsSending] = useState<boolean>(false);
+
     const handleSendAttempt = async (e: FormEvent) => {
         e.preventDefault();
+
+        // Set sending state to true to disable elements
+        setIsSending(true);
+
         try {
             await api.post('/attempts/send', { email, campaignName, description });
             alert('Phishing attempt sent.');
@@ -18,6 +25,9 @@ const PhishingSimulation: React.FC = () => {
         } catch (error) {
             console.error('Error sending phishing attempt:', error);
             alert('Failed to send attempt.');
+        } finally {
+            // Make sure to reset the loading state whether request succeeds or fails
+            setIsSending(false);
         }
     };
 
@@ -31,7 +41,7 @@ const PhishingSimulation: React.FC = () => {
     };
 
     useEffect(() => {
-       void fetchAttempts();
+        void fetchAttempts();
     }, []);
 
     return (
@@ -46,6 +56,7 @@ const PhishingSimulation: React.FC = () => {
                             value={campaignName}
                             onChange={(e) => setCampaignName(e.target.value)}
                             required
+                            disabled={isSending}  // Disable input while sending
                         />
                     </div>
                     <div className="form-group">
@@ -55,6 +66,7 @@ const PhishingSimulation: React.FC = () => {
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             required
+                            disabled={isSending}  // Disable input while sending
                         />
                     </div>
                     <div className="form-group">
@@ -64,9 +76,12 @@ const PhishingSimulation: React.FC = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
+                            disabled={isSending}  // Disable input while sending
                         />
                     </div>
-                    <button type="submit" className="button">Send Phishing Attempt</button>
+                    <button type="submit" className="button" disabled={isSending}>
+                        {isSending ? 'Sending...' : 'Send Phishing Attempt'}
+                    </button>
                 </form>
             </div>
             <h3 style={{ textAlign: 'center' }}>Phishing Attempts</h3>
